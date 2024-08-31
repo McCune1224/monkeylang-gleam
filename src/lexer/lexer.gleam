@@ -1,7 +1,7 @@
 import gleam/bit_array
 import gleam/bytes_builder
-import gleam/order
 import gleam/string
+import gleam/string_builder
 import token/token
 
 pub type Lexer {
@@ -11,6 +11,32 @@ pub type Lexer {
 pub fn new(input: String) -> Lexer {
   Lexer(input, 0, 0, <<>>)
   |> read_char()
+}
+
+pub fn skip_whitespace(l: Lexer) -> Lexer {
+  let is_whitespace = fn(ch: BitArray) -> Bool {
+    case ch {
+      <<32:int>> -> True
+      <<09:int>> -> True
+      <<10:int>> -> True
+      <<13:int>> -> True
+      _ -> False
+    }
+  }
+  case is_whitespace(l.ch) {
+    True -> skip_whitespace(read_char(l))
+    _ -> l
+  }
+}
+
+// https://www.asciitable.com/
+pub fn is_letter_or_underscore(ch: BitArray) -> Bool {
+  case ch {
+    <<code:int>> if code >= 65 && code <= 90 -> True
+    <<code:int>> if code >= 97 && code <= 122 -> True
+    <<"_":utf8>> -> True
+    _ -> False
+  }
 }
 
 pub fn read_char(l: Lexer) -> Lexer {
@@ -33,72 +59,97 @@ pub fn read_char(l: Lexer) -> Lexer {
   }
 }
 
-// TODO: I don't know if tuples are how you're supposed to return multiple values, oh well :)
-pub fn next_token(l: Lexer) -> #(Lexer, token.Token) {
-  let assert Ok(ch_str) = bit_array.to_string(l.ch)
-  let next_lex = read_char(l)
-  case l.ch {
-    _ if ch_str == "=" -> #(
-      next_lex,
-      token.Token(token.TokenType(token.c_assign), "="),
-    )
-    _ if ch_str == ";" -> #(
-      next_lex,
-      token.Token(token.TokenType(token.c_semicolon), ";"),
-    )
-    _ if ch_str == "(" -> #(
-      next_lex,
-      token.Token(token.TokenType(token.c_lparen), "("),
-    )
-    _ if ch_str == ")" -> #(
-      next_lex,
-      token.Token(token.TokenType(token.c_rparen), ")"),
-    )
-    _ if ch_str == "," -> #(
-      next_lex,
-      token.Token(token.TokenType(token.c_comma), ","),
-    )
-    _ if ch_str == "+" -> #(
-      next_lex,
-      token.Token(token.TokenType(token.c_plus), "+"),
-    )
-    _ if ch_str == "{" -> #(
-      next_lex,
-      token.Token(token.TokenType(token.c_lbrace), "{"),
-    )
-    _ if ch_str == "}" -> #(
-      next_lex,
-      token.Token(token.TokenType(token.c_rbrace), "}"),
-    )
-    _ if ch_str == "" -> #(
-      next_lex,
-      token.Token(token.TokenType(token.c_eof), ""),
-    )
-    _ -> #(next_lex, token.Token(token.TokenType(token.c_illegal), ""))
+pub fn is_digit(ch: BitArray) -> Bool {
+  case ch {
+    <<code:int>> if code >= 48 && code <= 57 -> True
+    _ -> False
   }
 }
 
-fn read_identifier(l: Lexer) -> #(Lexer, String) {
-  todo
+pub fn read_number(
+  l: Lexer,
+  sb: string_builder.StringBuilder,
+) -> #(Lexer, String) {
+  case is_digit(l.ch) {
+    // 48 is the ascii code for the character '0'
+    // 57 is the ascii code for the character '9'
+    True -> {
+      let assert Ok(new_char) = bit_array.to_string(l.ch)
+      read_number(read_char(l), sb |> string_builder.append(new_char))
+    }
+    _ -> {
+      #(l, sb |> string_builder.to_string())
+    }
+  }
 }
 
-// https://www.asciitable.com/
-pub fn is_letter_or_underscore(ch: BitArray) -> Bool {
-  let assert Ok(str_ch) = bit_array.to_string(ch)
+//TODO: Maybe find an alternative to returning tuples to avoid .0, .1 notation?
+pub fn read_identifier(
+  l: Lexer,
+  sb: string_builder.StringBuilder,
+) -> #(Lexer, String) {
+  case is_letter_or_underscore(l.ch) {
+    True -> {
+      let assert Ok(new_char) = bit_array.to_string(l.ch)
+      read_identifier(read_char(l), sb |> string_builder.append(new_char))
+    }
+    _ -> {
+      #(l, sb |> string_builder.to_string())
+    }
+  }
+}
 
-  // WARNING: prob better to handle with a case on the order type maybe?
-  let comp_lower_a = string.compare(str_ch, "a") |> order.to_int
-  let comp_lower_z = string.compare(str_ch, "z") |> order.to_int
-  let comp_upper_a = string.compare(str_ch, "A") |> order.to_int
-  let comp_upper_z = string.compare(str_ch, "Z") |> order.to_int
-
-  let is_lower = comp_lower_a == 0 || comp_lower_z == 0
-  let is_upper = comp_upper_a == 0 || comp_upper_z == 0
-
-  case str_ch {
-    "_" -> True
-    _ if is_lower -> True
-    _ if is_upper -> True
-    _ -> False
+// TODO: I don't know if tuples are how you're supposed to return multiple values, oh well :)
+pub fn next_token(l: Lexer) -> #(Lexer, token.Token) {
+  let trimmed_lex = skip_whitespace(l)
+  let next_lex = read_char(trimmed_lex)
+  case trimmed_lex.ch {
+    //skipping whitespaces,
+    <<"=":utf8>> -> #(
+      next_lex,
+      token.Token(token.TokenType(token.c_assign), "="),
+    )
+    <<";":utf8>> -> #(
+      next_lex,
+      token.Token(token.TokenType(token.c_semicolon), ";"),
+    )
+    <<"(":utf8>> -> #(
+      next_lex,
+      token.Token(token.TokenType(token.c_lparen), "("),
+    )
+    <<")":utf8>> -> #(
+      next_lex,
+      token.Token(token.TokenType(token.c_rparen), ")"),
+    )
+    <<",":utf8>> -> #(
+      next_lex,
+      token.Token(token.TokenType(token.c_comma), ","),
+    )
+    <<"+":utf8>> -> #(next_lex, token.Token(token.TokenType(token.c_plus), "+"))
+    <<"{":utf8>> -> #(
+      next_lex,
+      token.Token(token.TokenType(token.c_lbrace), "{"),
+    )
+    <<"}":utf8>> -> #(
+      next_lex,
+      token.Token(token.TokenType(token.c_rbrace), "}"),
+    )
+    <<"":utf8>> -> #(next_lex, token.Token(token.TokenType(token.c_eof), ""))
+    res ->
+      case is_letter_or_underscore(res), is_digit(res) {
+        True, _ -> {
+          let result = read_identifier(trimmed_lex, string_builder.new())
+          let str_token_type = token.lookup_ident(result.1)
+          #(result.0, token.Token(token.TokenType(str_token_type), result.1))
+        }
+        _, True -> {
+          let result = read_number(trimmed_lex, string_builder.new())
+          #(result.0, token.Token(token.TokenType(token.c_int), result.1))
+        }
+        _, _ -> {
+          let assert Ok(unknown_ch) = bit_array.to_string(trimmed_lex.ch)
+          #(next_lex, token.Token(token.TokenType(token.c_illegal), unknown_ch))
+        }
+      }
   }
 }

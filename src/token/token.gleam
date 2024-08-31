@@ -33,3 +33,11 @@ pub type TokenType {
 pub type Token {
   Token(token_type: TokenType, literal: String)
 }
+
+pub fn lookup_ident(s: String) -> String {
+  case s {
+    "fn" -> c_function
+    "let" -> c_let
+    _ -> c_ident
+  }
+}
