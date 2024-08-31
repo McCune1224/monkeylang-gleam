@@ -1,5 +1,3 @@
-import gleam/int
-
 pub const c_illegal = "ILLEGAL"
 
 pub const c_eof = "EOF"

@@ -1,5 +1,6 @@
 import gleam/bit_array
 import gleam/bytes_builder
+import gleam/order
 import gleam/string
 import token/token
 
@@ -74,5 +75,30 @@ pub fn next_token(l: Lexer) -> #(Lexer, token.Token) {
       token.Token(token.TokenType(token.c_eof), ""),
     )
     _ -> #(next_lex, token.Token(token.TokenType(token.c_illegal), ""))
+  }
+}
+
+fn read_identifier(l: Lexer) -> #(Lexer, String) {
+  todo
+}
+
+// https://www.asciitable.com/
+pub fn is_letter_or_underscore(ch: BitArray) -> Bool {
+  let assert Ok(str_ch) = bit_array.to_string(ch)
+
+  // WARNING: prob better to handle with a case on the order type maybe?
+  let comp_lower_a = string.compare(str_ch, "a") |> order.to_int
+  let comp_lower_z = string.compare(str_ch, "z") |> order.to_int
+  let comp_upper_a = string.compare(str_ch, "A") |> order.to_int
+  let comp_upper_z = string.compare(str_ch, "Z") |> order.to_int
+
+  let is_lower = comp_lower_a == 0 || comp_lower_z == 0
+  let is_upper = comp_upper_a == 0 || comp_upper_z == 0
+
+  case str_ch {
+    "_" -> True
+    _ if is_lower -> True
+    _ if is_upper -> True
+    _ -> False
   }
 }
