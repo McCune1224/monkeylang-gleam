@@ -24,7 +24,7 @@ fn test_rec(l: lexer.Lexer, tests: List(TestNextTokenInput), tally: Int) -> Nil 
 }
 
 pub fn next_token_test() {
-  let input: String =
+  let input_one: String =
     "let five = 5;
     let ten = 10;
 
@@ -33,19 +33,31 @@ pub fn next_token_test() {
     };
 
     let result = add(five,ten);
+    !-/*5;
+    5 < 10 > 5;
+    if (5 < 10) {
+      return true;
+    } else {
+      return false 
+    }
+
+    10 == 10;
+    10 != 9;
     "
-  // let input: String = "=+("
-  let tests: List(TestNextTokenInput) = [
+  let test_one: List(TestNextTokenInput) = [
+    //    "let five = 5;
     TestNextTokenInput(token.TokenType(token.c_let), "let"),
     TestNextTokenInput(token.TokenType(token.c_ident), "five"),
     TestNextTokenInput(token.TokenType(token.c_assign), "="),
     TestNextTokenInput(token.TokenType(token.c_int), "5"),
     TestNextTokenInput(token.TokenType(token.c_semicolon), ";"),
+    //let ten = 10;
     TestNextTokenInput(token.TokenType(token.c_let), "let"),
     TestNextTokenInput(token.TokenType(token.c_ident), "ten"),
     TestNextTokenInput(token.TokenType(token.c_assign), "="),
     TestNextTokenInput(token.TokenType(token.c_int), "10"),
     TestNextTokenInput(token.TokenType(token.c_semicolon), ";"),
+    // let add = fn(x, y) {
     TestNextTokenInput(token.TokenType(token.c_let), "let"),
     TestNextTokenInput(token.TokenType(token.c_ident), "add"),
     TestNextTokenInput(token.TokenType(token.c_assign), "="),
@@ -56,12 +68,15 @@ pub fn next_token_test() {
     TestNextTokenInput(token.TokenType(token.c_ident), "y"),
     TestNextTokenInput(token.TokenType(token.c_rparen), ")"),
     TestNextTokenInput(token.TokenType(token.c_lbrace), "{"),
+    //x + y;
     TestNextTokenInput(token.TokenType(token.c_ident), "x"),
     TestNextTokenInput(token.TokenType(token.c_plus), "+"),
     TestNextTokenInput(token.TokenType(token.c_ident), "y"),
     TestNextTokenInput(token.TokenType(token.c_semicolon), ";"),
+    // };
     TestNextTokenInput(token.TokenType(token.c_rbrace), "}"),
     TestNextTokenInput(token.TokenType(token.c_semicolon), ";"),
+    // let result = add(five,ten);
     TestNextTokenInput(token.TokenType(token.c_let), "let"),
     TestNextTokenInput(token.TokenType(token.c_ident), "result"),
     TestNextTokenInput(token.TokenType(token.c_assign), "="),
@@ -72,14 +87,57 @@ pub fn next_token_test() {
     TestNextTokenInput(token.TokenType(token.c_ident), "ten"),
     TestNextTokenInput(token.TokenType(token.c_rparen), ")"),
     TestNextTokenInput(token.TokenType(token.c_semicolon), ";"),
+    // !-/*5;
+    TestNextTokenInput(token.TokenType(token.c_bang), "!"),
+    TestNextTokenInput(token.TokenType(token.c_minus), "-"),
+    TestNextTokenInput(token.TokenType(token.c_slash), "/"),
+    TestNextTokenInput(token.TokenType(token.c_asterisk), "*"),
+    TestNextTokenInput(token.TokenType(token.c_int), "5"),
+    TestNextTokenInput(token.TokenType(token.c_semicolon), ";"),
+    // 5 < 10 > 5;
+    TestNextTokenInput(token.TokenType(token.c_int), "5"),
+    TestNextTokenInput(token.TokenType(token.c_lt), "<"),
+    TestNextTokenInput(token.TokenType(token.c_int), "10"),
+    TestNextTokenInput(token.TokenType(token.c_gt), ">"),
+    TestNextTokenInput(token.TokenType(token.c_int), "5"),
+    TestNextTokenInput(token.TokenType(token.c_semicolon), ";"),
+    //    if (5 < 10) {
+    TestNextTokenInput(token.TokenType(token.c_if), "if"),
+    TestNextTokenInput(token.TokenType(token.c_lparen), "("),
+    TestNextTokenInput(token.TokenType(token.c_int), "5"),
+    TestNextTokenInput(token.TokenType(token.c_lt), "<"),
+    TestNextTokenInput(token.TokenType(token.c_int), "10"),
+    TestNextTokenInput(token.TokenType(token.c_rparen), ")"),
+    TestNextTokenInput(token.TokenType(token.c_lbrace), "{"),
+    //   return true;
+    TestNextTokenInput(token.TokenType(token.c_return), "return"),
+    TestNextTokenInput(token.TokenType(token.c_true), "true"),
+    TestNextTokenInput(token.TokenType(token.c_semicolon), "c_semicolon"),
+    // } else {
+    TestNextTokenInput(token.TokenType(token.c_rbrace), "}"),
+    TestNextTokenInput(token.TokenType(token.c_else), "else"),
+    TestNextTokenInput(token.TokenType(token.c_lbrace), "{"),
+    //   return false 
+    TestNextTokenInput(token.TokenType(token.c_return), "return"),
+    TestNextTokenInput(token.TokenType(token.c_false), "false"),
+    // }
+    TestNextTokenInput(token.TokenType(token.c_rbrace), "}"),
+    // 10 == 10;
+    TestNextTokenInput(token.TokenType(token.c_int), "10"),
+    TestNextTokenInput(token.TokenType(token.c_eq), "=="),
+    TestNextTokenInput(token.TokenType(token.c_int), "10"),
+    TestNextTokenInput(token.TokenType(token.c_semicolon), ";"),
+    // 10 != 9;
+    //
+    TestNextTokenInput(token.TokenType(token.c_int), "10"),
+    TestNextTokenInput(token.TokenType(token.c_not_eq), "!="),
+    TestNextTokenInput(token.TokenType(token.c_int), "9"),
+    TestNextTokenInput(token.TokenType(token.c_semicolon), ";"),
     TestNextTokenInput(token.TokenType(token.c_eof), ""),
   ]
-  let l = lexer.new(input)
-  test_rec(l, tests, 0)
+  let l = lexer.new(input_one)
+  test_rec(l, test_one, 0)
 }
-
-//
-//
 
 @internal
 pub type TestIsLetterOrUnderscoreInput {

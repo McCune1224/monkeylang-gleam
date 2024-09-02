@@ -99,12 +99,20 @@ pub fn read_identifier(
   }
 }
 
+pub fn peek_char(l: Lexer) -> BitArray {
+  let longer_read_position = l.read_position >= string.length(l.input)
+  case longer_read_position {
+    True -> <<>>
+    False ->
+      string.slice(l.input, l.read_position, 1) |> bit_array.from_string()
+  }
+}
+
 // TODO: I don't know if tuples are how you're supposed to return multiple values, oh well :)
 pub fn next_token(l: Lexer) -> #(Lexer, token.Token) {
   let trimmed_lex = skip_whitespace(l)
   let next_lex = read_char(trimmed_lex)
   case trimmed_lex.ch {
-    //skipping whitespaces,
     <<"=":utf8>> -> #(
       next_lex,
       token.Token(token.TokenType(token.c_assign), "="),
@@ -126,6 +134,21 @@ pub fn next_token(l: Lexer) -> #(Lexer, token.Token) {
       token.Token(token.TokenType(token.c_comma), ","),
     )
     <<"+":utf8>> -> #(next_lex, token.Token(token.TokenType(token.c_plus), "+"))
+    <<"-":utf8>> -> #(
+      next_lex,
+      token.Token(token.TokenType(token.c_minus), "-"),
+    )
+    <<"!":utf8>> -> #(next_lex, token.Token(token.TokenType(token.c_bang), "!"))
+    <<"/":utf8>> -> #(
+      next_lex,
+      token.Token(token.TokenType(token.c_slash), "/"),
+    )
+    <<"*":utf8>> -> #(
+      next_lex,
+      token.Token(token.TokenType(token.c_asterisk), "*"),
+    )
+    <<"<":utf8>> -> #(next_lex, token.Token(token.TokenType(token.c_lt), "<"))
+    <<">":utf8>> -> #(next_lex, token.Token(token.TokenType(token.c_gt), ">"))
     <<"{":utf8>> -> #(
       next_lex,
       token.Token(token.TokenType(token.c_lbrace), "{"),
