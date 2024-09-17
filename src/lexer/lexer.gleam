@@ -1,5 +1,6 @@
 import gleam/bit_array
 import gleam/bytes_builder
+import gleam/io
 import gleam/string
 import gleam/string_builder
 import token/token
@@ -108,15 +109,20 @@ pub fn peek_char(l: Lexer) -> BitArray {
   }
 }
 
-// TODO: I don't know if tuples are how you're supposed to return multiple values, oh well :)
+// WARNING: I don't know if tuples are how you're supposed to return multiple values, oh well :)
 pub fn next_token(l: Lexer) -> #(Lexer, token.Token) {
   let trimmed_lex = skip_whitespace(l)
   let next_lex = read_char(trimmed_lex)
   case trimmed_lex.ch {
-    <<"=":utf8>> -> #(
-      next_lex,
-      token.Token(token.TokenType(token.c_assign), "="),
-    )
+    <<"=":utf8>> ->
+      //FIXME: THIS SHIT IS BROKEN, read_char is prob the culprit
+      case peek_char(next_lex) {
+        <<"=":utf8>> -> #(
+          read_char(next_lex),
+          token.Token(token.TokenType(token.c_eq), "=="),
+        )
+        _ -> #(next_lex, token.Token(token.TokenType(token.c_assign), "="))
+      }
     <<";":utf8>> -> #(
       next_lex,
       token.Token(token.TokenType(token.c_semicolon), ";"),
@@ -138,7 +144,14 @@ pub fn next_token(l: Lexer) -> #(Lexer, token.Token) {
       next_lex,
       token.Token(token.TokenType(token.c_minus), "-"),
     )
-    <<"!":utf8>> -> #(next_lex, token.Token(token.TokenType(token.c_bang), "!"))
+    <<"!":utf8>> ->
+      case peek_char(next_lex) {
+        <<"=":utf8>> -> #(
+          read_char(next_lex),
+          token.Token(token.TokenType(token.c_not_eq), "!="),
+        )
+        _ -> #(next_lex, token.Token(token.TokenType(token.c_bang), "!"))
+      }
     <<"/":utf8>> -> #(
       next_lex,
       token.Token(token.TokenType(token.c_slash), "/"),
