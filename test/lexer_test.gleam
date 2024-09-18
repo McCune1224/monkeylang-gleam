@@ -1,3 +1,4 @@
+import gleam/bit_array
 import gleam/io
 import gleam/list
 import gleam/string_builder
@@ -5,6 +6,7 @@ import gleeunit/should
 import lexer/lexer
 import token/token
 
+// WARNING: Good luck trying to read this on github, using @internal breaks syntax highlighting :D
 @internal
 pub type TestNextTokenInput {
   TestNextTokenInput(expected: token.TokenType, expected_literal: String)
@@ -19,13 +21,13 @@ fn test_rec(l: lexer.Lexer, tests: List(TestNextTokenInput), tally: Int) -> Nil 
       test_rec(next_l, rest, tally + 1)
     }
     [] -> Nil
-    // TODO: I don't know if this is the right way to do this
   }
 }
 
 pub fn next_token_test() {
   let input_one: String =
-    "let five = 5;
+    "
+    let five = 5;
     let ten = 10;
 
     let add = fn(x, y) {
@@ -189,5 +191,20 @@ pub fn read_identifier_test() {
     let result = lexer.read_identifier(lex, string_builder.new())
     let string_result = result.1
     should.be_true(t.expected == string_result)
+  })
+}
+
+@internal
+pub type TestPeekCharInput {
+  TestPeekCharInput(expected: BitArray, input: String)
+}
+
+pub fn peek_char_test() {
+  let tests: List(TestPeekCharInput) = [TestPeekCharInput(<<"a":utf8>>, "ba")]
+  tests
+  |> list.each(fn(t) -> Nil {
+    let lex = lexer.new(t.input)
+    let result = lexer.peek_char(lex)
+    should.be_true(t.expected == result)
   })
 }

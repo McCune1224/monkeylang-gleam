@@ -116,7 +116,7 @@ pub fn next_token(l: Lexer) -> #(Lexer, token.Token) {
   case trimmed_lex.ch {
     <<"=":utf8>> ->
       //FIXME: THIS SHIT IS BROKEN, read_char is prob the culprit
-      case peek_char(next_lex) {
+      case peek_char(trimmed_lex) {
         <<"=":utf8>> -> #(
           read_char(next_lex),
           token.Token(token.TokenType(token.c_eq), "=="),
@@ -145,7 +145,7 @@ pub fn next_token(l: Lexer) -> #(Lexer, token.Token) {
       token.Token(token.TokenType(token.c_minus), "-"),
     )
     <<"!":utf8>> ->
-      case peek_char(next_lex) {
+      case peek_char(trimmed_lex) {
         <<"=":utf8>> -> #(
           read_char(next_lex),
           token.Token(token.TokenType(token.c_not_eq), "!="),
